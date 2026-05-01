@@ -13,7 +13,7 @@ import '../utils/enums.dart';
 import '../utils/keys.dart';
 
 final routers = GoRouter(
-  initialLocation: AppRouters.splash,
+  initialLocation: AppRouters.resetPassword,
   navigatorKey: navigatorStateKey,
   routes: [
     GoRoute(

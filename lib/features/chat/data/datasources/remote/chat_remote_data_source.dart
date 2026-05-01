@@ -62,6 +62,7 @@ class ChatRemoteDataSource {
   Future<void> updateStatusToDelivered(
     List<DocumentChange<Map<String, dynamic>>> docs,
   ) async {
+    if (docs.isEmpty) return;
     final batch = firestore.batch();
     for (final doc in docs) {
       final data = doc.doc.data() as Map<String, dynamic>;
@@ -76,43 +77,62 @@ class ChatRemoteDataSource {
   }
 
   Future<void> updateStatusToSeen(List<MessageModel> messages) async {
-    firestore.runTransaction((transaction) async {
-      final List<Map<String, dynamic>> updates = [];
-      for (final message in messages) {
-        final docRef = firestore
-            .collection(AppStrings.chats)
-            .doc(message.chatId)
-            .collection(AppStrings.messages)
-            .doc(message.messageId);
+    if (messages.isEmpty) return;
+    final batch = firestore.batch();
+    for (final message in messages) {
+      final docRef = firestore
+          .collection(AppStrings.chats)
+          .doc(message.chatId)
+          .collection(AppStrings.messages)
+          .doc(message.messageId);
+      if ((await docRef.get()).get('status') == 'seen') continue;
+      batch.update(docRef, {'status': 'seen'});
+    }
+    batch.update(
+      firestore
+          .collection(AppStrings.userChats)
+          .doc(me.phone)
+          .collection(AppStrings.chats)
+          .doc(messages.first.chatId),
+      {'unreadCount': 0},
+    );
+    await batch.commit();
+    // firestore.runTransaction((transaction) async {
+    //   final List<Map<String, dynamic>> updates = [];
+    //   for (final message in messages) {
+    // final docRef = firestore
+    //     .collection(AppStrings.chats)
+    //     .doc(message.chatId)
+    //     .collection(AppStrings.messages)
+    //     .doc(message.messageId);
+    //     final userChatRef = firestore
+    //         .collection(AppStrings.userChats)
+    //         .doc(me.phone)
+    //         .collection(AppStrings.chats)
+    //         .doc(message.chatId);
 
-        final userChatRef = firestore
-            .collection(AppStrings.userChats)
-            .doc(me.phone)
-            .collection(AppStrings.chats)
-            .doc(message.chatId);
+    //     final messageSnapshot = await transaction.get(docRef);
+    //     final userChatSnapshot = await transaction.get(userChatRef);
 
-        final messageSnapshot = await transaction.get(docRef);
-        final userChatSnapshot = await transaction.get(userChatRef);
+    //     final status = messageSnapshot.get('status');
+    //     final unread = userChatSnapshot.get('unreadCount') ?? 0;
 
-        final status = messageSnapshot.get('status');
-        final unread = userChatSnapshot.get('unreadCount') ?? 0;
-
-        if (status != 'seen') {
-          updates.add({
-            'docRef': docRef,
-            'userChatRef': userChatRef,
-            'unread': unread,
-          });
-        }
-      }
-      for (final item in updates) {
-        transaction.update(item['docRef'], {'status': 'seen'});
-        if (item['unread'] > 0) {
-          transaction.update(item['userChatRef'], {
-            'unreadCount': item['unread'] - 1,
-          });
-        }
-      }
-    });
+    //     if (status != 'seen') {
+    //       updates.add({
+    //         'docRef': docRef,
+    //         'userChatRef': userChatRef,
+    //         'unread': unread,
+    //       });
+    //     }
+    //   }
+    //   for (final item in updates) {
+    //     transaction.update(item['docRef'], {'status': 'seen'});
+    //     if (item['unread'] > 0) {
+    //       transaction.update(item['userChatRef'], {
+    //         'unreadCount': item['unread'] - 1,
+    //       });
+    //     }
+    //   }
+    // });
   }
 }
