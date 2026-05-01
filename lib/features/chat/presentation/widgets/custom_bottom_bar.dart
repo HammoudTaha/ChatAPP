@@ -101,7 +101,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                   Message(
                     id: generateId(),
                     content: _controller.text,
-                    senderId: context.read<AuthBloc>().state.user!.id,
+                    senderId: context.read<AuthBloc>().state.user!.phone,
                     createdAt: DateTime.now(),
                     chatId: widget.chatId,
                   ),

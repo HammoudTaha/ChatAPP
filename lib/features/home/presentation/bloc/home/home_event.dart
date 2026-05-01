@@ -10,7 +10,6 @@ class CheckPhoneFoundOnChatEvent extends HomeEvent {
 }
 
 class SaveContactEvent extends HomeEvent {
-  final String name;
-  final String phone;
-  const SaveContactEvent({required this.name, required this.phone});
+  final ChatEntity chat;
+  const SaveContactEvent(this.chat);
 }

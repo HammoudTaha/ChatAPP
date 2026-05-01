@@ -26,4 +26,8 @@ class AppStrings {
   static const String cacheRefreshTokenLifeTime =
       'CACHE_REFRESH_TOKEN_LIFE_TIME';
   static const String cachedHomeContacts = 'CACHED_HOME_CONTACTS';
+
+  static const String messages = 'messages';
+  static const String chats = 'chats';
+  static const String userChats = 'userChats';
 }

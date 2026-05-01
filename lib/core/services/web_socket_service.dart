@@ -32,7 +32,7 @@ class WebSocketService {
     _isConnecting = true;
     try {
       _channel = WebSocketChannel.connect(
-        Uri.parse('ws://10.0.2.2:8080/app/4lhezowpac5vha4plrra'),
+        Uri.parse('ws://10.0.2.2:8080/app/wkyhpuhhotlpymljcr2t'),
       );
       _subscription = _channel?.stream.listen(
         _onData,
@@ -62,24 +62,32 @@ class WebSocketService {
           _pingPong({'event': 'pusher:pong'});
           break;
         case 'pusher:connection_established':
-          String soketId = jsonDecode(message["data"])["socket_id"];
-          String? authToken = await _onAuthenticate(soketId);
-          if (authToken != null) {
-            _onSubscribe(authToken);
-          }
+          _channel?.sink.add(
+            jsonEncode({
+              "event": "pusher:subscribe",
+              "data": {"channel": "chat"},
+            }),
+          );
+          // String soketId = jsonDecode(message["data"])["socket_id"];
+          // String? authToken = await _onAuthenticate(soketId);
+          // if (authToken != null) {
+          //   _onSubscribe(authToken);
+          // }
           _deley = 1;
           break;
         case 'message.sent':
+          print('BBBBBBBBBBBBBBBBBBBBBBB');
           final json = jsonDecode(message['data'])['message'];
-          final messageModel = MessageModel.fromJson(json);
-          _chatLocalDataSource.addOrUpdateMessage(messageModel);
-          if (getIt<AuthBloc>().state.user!.id != messageModel.senderId &&
-              messageModel.status == MessageStatus.sent) {
-            await _chatRemoteDataSource.updateMessageStatus(
-              messageModel.messageId,
-              MessageStatus.delivered,
-            );
-          }
+          print('Received message: $json');
+          // final messageModel = MessageModel.fromJson(json);
+          //  _chatLocalDataSource.addOrUpdateMessage(messageModel);
+          // if (getIt<AuthBloc>().state.user!.id != messageModel.senderId &&
+          //   messageModel.status == MessageStatus.sent) {
+          // await _chatRemoteDataSource.updateMessageStatus(
+          //   messageModel.messageId,
+          //   MessageStatus.delivered,
+          // );
+          ///}
           break;
       }
     } catch (_) {}
@@ -120,6 +128,20 @@ class WebSocketService {
       'data': {'auth': authToken, 'channel': 'private-chat.$chatId'},
     };
     _channel?.sink.add(jsonEncode(subscriptionMessage));
+  }
+
+  void sendMessage(MessageModel messageModel) {
+    print('MMMMMMMMMMMMMMM');
+    final message = {
+      'event': 'client-send-message',
+      'data': {'content': messageModel.content},
+      'channel': 'chat',
+    };
+    try {
+      _channel?.sink.add(jsonEncode(message));
+    } catch (e) {
+      print('Error sending message: $e');
+    }
   }
 
   void _reconnect() {

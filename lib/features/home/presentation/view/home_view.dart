@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/utils/connection_info.dart';
 import '../../../../core/utils/di.dart';
+import '../../data/repositories/home_repository_impl.dart';
+import '../../domain/entities/chat_entity.dart';
 import '../widgets/custom_add_contact_bottom_sheet.dart';
 import '../widgets/custom_chat_item.dart';
 import '../widgets/custom_navigation_bar.dart';
@@ -21,6 +23,10 @@ class _HomeViewState extends State<HomeView> {
   void initState() {
     getIt<ConnectionInfo>().listenToConnectionChanges();
     super.initState();
+  }
+
+  Stream<List<ChatEntity>> chats() async* {
+    yield* (getIt<HomeRepositoryImpl>()).watchChats();
   }
 
   @override
@@ -59,15 +65,27 @@ class _HomeViewState extends State<HomeView> {
         scrolledUnderElevation: 0.0,
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: List.generate(
-            1,
-            (index) => CustomChatItem(
-              ontap: () {
-                context.push('/chat');
-              },
-            ),
-          ),
+        child: StreamBuilder(
+          stream: chats(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Column(
+                children: List.generate(snapshot.data!.length, (index) {
+                  return CustomChatItem(
+                    chat: snapshot.data![index],
+                    ontap: () {
+                      context.push(
+                        '/chat',
+                        extra: snapshot.data![index].chatId,
+                      );
+                    },
+                  );
+                }),
+              );
+            } else {
+              return const SizedBox();
+            }
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(

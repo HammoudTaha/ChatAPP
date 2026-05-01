@@ -102,7 +102,12 @@ class AuthRepositoryImpl implements AuthRepository {
       if (_authLocalDataSource.getIsLoggedInUser()) {
         TokenModel accessToken = await _authLocalDataSource.getAccessToken();
         if (accessToken.expiresAT.isBefore(DateTime.now())) {
-          return Right(AuthStatusModel(isAuthenticated: false));
+          return Right(
+            AuthStatusModel(
+              isAuthenticated: false,
+              user: _authLocalDataSource.getUser(),
+            ),
+          );
         }
         return Right(
           AuthStatusModel(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../core/utils/connection_info.dart';
 import '../../../../core/utils/enums.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -9,7 +10,12 @@ import '../models/messgaModel/message_model.dart';
 class ChatRepositoryImpl implements ChatRepository {
   final ChatLocalDataSource _chatLocalDataSource;
   final ChatRemoteDataSource _chatRemoteDataSource;
-  ChatRepositoryImpl(this._chatLocalDataSource, this._chatRemoteDataSource);
+  final ConnectionInfo _connectionInfo;
+  const ChatRepositoryImpl(
+    this._chatLocalDataSource,
+    this._chatRemoteDataSource,
+    this._connectionInfo,
+  );
 
   @override
   Future<void> sendLocalMessage(Message message) async {
@@ -21,11 +27,29 @@ class ChatRepositoryImpl implements ChatRepository {
     } catch (_) {}
   }
 
+  Future<void> updateStatusToSeen(List<Message> messages) async {
+    await _chatRemoteDataSource.updateStatusToSeen(
+      messages.map((e) => MessageModel.fromEntity(e)).toList(),
+    );
+  }
+
   @override
   Future<void> sendRemoteMessage(Message message) async {
     try {
-      await _chatRemoteDataSource.sendMessage(message);
-      _chatLocalDataSource.updateMessageStatus(message.id, MessageStatus.sent);
+      if (await _connectionInfo.isConnected) {
+        await _chatRemoteDataSource.sendMessage(
+          MessageModel.fromEntity(message),
+        );
+        _chatLocalDataSource.updateMessageStatus(
+          message.id,
+          MessageStatus.sent,
+        );
+      } else {
+        _chatLocalDataSource.updateMessageStatus(
+          message.id,
+          MessageStatus.failed,
+        );
+      }
     } catch (_) {
       _chatLocalDataSource.updateMessageStatus(
         message.id,

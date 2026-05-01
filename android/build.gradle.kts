@@ -3,6 +3,13 @@ allprojects {
         google()
         mavenCentral()
     }
+    //added this
+     configurations.all {
+        resolutionStrategy {
+            force("com.google.firebase:firebase-components:18.0.0")
+            force("com.google.firebase:protolite-well-known-types:18.0.0")
+        }
+    }
 }
 
 val newBuildDir: Directory =

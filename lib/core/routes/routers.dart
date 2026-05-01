@@ -74,7 +74,8 @@ final routers = GoRouter(
     GoRoute(
       path: AppRouters.chat,
       builder: (context, state) {
-        return ChatView(chatId: '01KKGVJFAC82Q18WCNHBCGB948');
+        final chatId = state.extra as String? ?? '';
+        return ChatView(chatId: chatId);
       },
     ),
   ],

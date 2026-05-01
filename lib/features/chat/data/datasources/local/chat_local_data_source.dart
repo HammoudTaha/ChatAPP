@@ -64,16 +64,20 @@ class ChatLocalDataSource {
         );
   }
 
-  Stream<List<Message>> watchFailedMessages() async* {
+  Stream<List<MessageModel>> watchFailedMessages() async* {
     yield* _isar.messageModels
         .where()
         .statusEqualTo(MessageStatus.failed)
         .sortByCreatedAtDesc()
-        .watch(fireImmediately: true)
-        .map(
-          (messageModel) =>
-              messageModel.map((model) => model.toEntity()).toList(),
-        );
+        .watch(fireImmediately: true);
+  }
+
+    Stream<List<MessageModel>> watchSentMessages() async* {
+    yield* _isar.messageModels
+        .where()
+        .statusEqualTo(MessageStatus.failed)
+        .sortByCreatedAtDesc()
+        .watch(fireImmediately: true);
   }
 
   void deleteAllMessages() {

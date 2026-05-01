@@ -28,11 +28,12 @@ class _SplashViewState extends State<SplashView> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state.status == BlocStatus.success) {
-          if ((state as CheckAuthStateState).isLoggedIn) {
-            context.go('/home');
-          } else {
-            context.go('/login');
-          }
+          context.go('/home');
+          // if ((state as CheckAuthStateState).isLoggedIn) {
+          //   context.go('/home');
+          // } else {
+          //   context.go('/login');
+          // }
         } else if (state.status == BlocStatus.failure) {
           context.go('/login');
         }

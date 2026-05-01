@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../domain/entities/chat_entity.dart';
 
 class CustomChatItem extends StatelessWidget {
-  const CustomChatItem({super.key, this.ontap});
+  const CustomChatItem({super.key, this.ontap, required this.chat});
   final void Function()? ontap;
+  final ChatEntity chat;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -58,14 +60,14 @@ class CustomChatItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Hammoud Taha',
+                        chat.title,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        '10:45 AM',
+                        '${chat.lastMessageAt}',
                         style: TextStyle(
                           color: Color(0xff9196A1),
                           fontSize: 11,
@@ -89,15 +91,18 @@ class CustomChatItem extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      CircleAvatar(
-                        backgroundColor: AppColors.primary,
-                        radius: 10,
-                        child: Text(
-                          '2',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                      Visibility(
+                        visible: chat.unreadCount != 0,
+                        child: CircleAvatar(
+                          backgroundColor: AppColors.primary,
+                          radius: 10,
+                          child: Text(
+                            '${chat.unreadCount}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),

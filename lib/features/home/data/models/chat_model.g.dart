@@ -22,31 +22,46 @@ const ChatModelSchema = CollectionSchema(
       name: r'chatId',
       type: IsarType.string,
     ),
-    r'lastMessageAt': PropertySchema(
+    r'createdAt': PropertySchema(
       id: 1,
+      name: r'createdAt',
+      type: IsarType.dateTime,
+    ),
+    r'lastMessage': PropertySchema(
+      id: 2,
+      name: r'lastMessage',
+      type: IsarType.string,
+    ),
+    r'lastMessageAt': PropertySchema(
+      id: 3,
       name: r'lastMessageAt',
       type: IsarType.dateTime,
     ),
     r'participantIds': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'participantIds',
       type: IsarType.stringList,
     ),
     r'title': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'title',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'type',
       type: IsarType.byte,
       enumMap: _ChatModeltypeEnumValueMap,
     ),
     r'unreadCount': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'unreadCount',
       type: IsarType.long,
+    ),
+    r'updatedAt': PropertySchema(
+      id: 8,
+      name: r'updatedAt',
+      type: IsarType.dateTime,
     )
   },
   estimateSize: _chatModelEstimateSize,
@@ -97,6 +112,12 @@ int _chatModelEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.chatId.length * 3;
+  {
+    final value = object.lastMessage;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.participantIds.length * 3;
   {
     for (var i = 0; i < object.participantIds.length; i++) {
@@ -115,11 +136,14 @@ void _chatModelSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.chatId);
-  writer.writeDateTime(offsets[1], object.lastMessageAt);
-  writer.writeStringList(offsets[2], object.participantIds);
-  writer.writeString(offsets[3], object.title);
-  writer.writeByte(offsets[4], object.type.index);
-  writer.writeLong(offsets[5], object.unreadCount);
+  writer.writeDateTime(offsets[1], object.createdAt);
+  writer.writeString(offsets[2], object.lastMessage);
+  writer.writeDateTime(offsets[3], object.lastMessageAt);
+  writer.writeStringList(offsets[4], object.participantIds);
+  writer.writeString(offsets[5], object.title);
+  writer.writeByte(offsets[6], object.type.index);
+  writer.writeLong(offsets[7], object.unreadCount);
+  writer.writeDateTime(offsets[8], object.updatedAt);
 }
 
 ChatModel _chatModelDeserialize(
@@ -130,12 +154,15 @@ ChatModel _chatModelDeserialize(
 ) {
   final object = ChatModel(
     chatId: reader.readString(offsets[0]),
-    lastMessageAt: reader.readDateTime(offsets[1]),
-    participantIds: reader.readStringList(offsets[2]) ?? [],
-    title: reader.readString(offsets[3]),
-    type: _ChatModeltypeValueEnumMap[reader.readByteOrNull(offsets[4])] ??
+    createdAt: reader.readDateTime(offsets[1]),
+    lastMessage: reader.readStringOrNull(offsets[2]),
+    lastMessageAt: reader.readDateTimeOrNull(offsets[3]),
+    participantIds: reader.readStringList(offsets[4]) ?? [],
+    title: reader.readString(offsets[5]),
+    type: _ChatModeltypeValueEnumMap[reader.readByteOrNull(offsets[6])] ??
         ChatType.single,
-    unreadCount: reader.readLongOrNull(offsets[5]) ?? 0,
+    unreadCount: reader.readLongOrNull(offsets[7]) ?? 0,
+    updatedAt: reader.readDateTime(offsets[8]),
   );
   return object;
 }
@@ -152,14 +179,20 @@ P _chatModelDeserializeProp<P>(
     case 1:
       return (reader.readDateTime(offset)) as P;
     case 2:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 4:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
       return (_ChatModeltypeValueEnumMap[reader.readByteOrNull(offset)] ??
           ChatType.single) as P;
-    case 5:
+    case 7:
       return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 8:
+      return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -368,8 +401,29 @@ extension ChatModelQueryWhere
     });
   }
 
+  QueryBuilder<ChatModel, ChatModel, QAfterWhereClause> lastMessageAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'lastMessageAt',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterWhereClause>
+      lastMessageAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'lastMessageAt',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
   QueryBuilder<ChatModel, ChatModel, QAfterWhereClause> lastMessageAtEqualTo(
-      DateTime lastMessageAt) {
+      DateTime? lastMessageAt) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
         indexName: r'lastMessageAt',
@@ -379,7 +433,7 @@ extension ChatModelQueryWhere
   }
 
   QueryBuilder<ChatModel, ChatModel, QAfterWhereClause> lastMessageAtNotEqualTo(
-      DateTime lastMessageAt) {
+      DateTime? lastMessageAt) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -415,7 +469,7 @@ extension ChatModelQueryWhere
 
   QueryBuilder<ChatModel, ChatModel, QAfterWhereClause>
       lastMessageAtGreaterThan(
-    DateTime lastMessageAt, {
+    DateTime? lastMessageAt, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -429,7 +483,7 @@ extension ChatModelQueryWhere
   }
 
   QueryBuilder<ChatModel, ChatModel, QAfterWhereClause> lastMessageAtLessThan(
-    DateTime lastMessageAt, {
+    DateTime? lastMessageAt, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -443,8 +497,8 @@ extension ChatModelQueryWhere
   }
 
   QueryBuilder<ChatModel, ChatModel, QAfterWhereClause> lastMessageAtBetween(
-    DateTime lowerLastMessageAt,
-    DateTime upperLastMessageAt, {
+    DateTime? lowerLastMessageAt,
+    DateTime? upperLastMessageAt, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -592,6 +646,60 @@ extension ChatModelQueryFilter
     });
   }
 
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> createdAtEqualTo(
+      DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'createdAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      createdAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'createdAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> createdAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'createdAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> createdAtBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'createdAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -646,7 +754,177 @@ extension ChatModelQueryFilter
   }
 
   QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
-      lastMessageAtEqualTo(DateTime value) {
+      lastMessageIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastMessage',
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      lastMessageIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastMessage',
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> lastMessageEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastMessage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      lastMessageGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastMessage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> lastMessageLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastMessage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> lastMessageBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastMessage',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      lastMessageStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'lastMessage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> lastMessageEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'lastMessage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> lastMessageContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'lastMessage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> lastMessageMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'lastMessage',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      lastMessageIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastMessage',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      lastMessageIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'lastMessage',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      lastMessageAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastMessageAt',
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      lastMessageAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastMessageAt',
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      lastMessageAtEqualTo(DateTime? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'lastMessageAt',
@@ -657,7 +935,7 @@ extension ChatModelQueryFilter
 
   QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
       lastMessageAtGreaterThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -671,7 +949,7 @@ extension ChatModelQueryFilter
 
   QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
       lastMessageAtLessThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -685,8 +963,8 @@ extension ChatModelQueryFilter
 
   QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
       lastMessageAtBetween(
-    DateTime lower,
-    DateTime upper, {
+    DateTime? lower,
+    DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -1163,6 +1441,60 @@ extension ChatModelQueryFilter
       ));
     });
   }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> updatedAtEqualTo(
+      DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition>
+      updatedAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> updatedAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterFilterCondition> updatedAtBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension ChatModelQueryObject
@@ -1181,6 +1513,30 @@ extension ChatModelQuerySortBy on QueryBuilder<ChatModel, ChatModel, QSortBy> {
   QueryBuilder<ChatModel, ChatModel, QAfterSortBy> sortByChatIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'chatId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> sortByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> sortByCreatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> sortByLastMessage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastMessage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> sortByLastMessageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastMessage', Sort.desc);
     });
   }
 
@@ -1231,6 +1587,18 @@ extension ChatModelQuerySortBy on QueryBuilder<ChatModel, ChatModel, QSortBy> {
       return query.addSortBy(r'unreadCount', Sort.desc);
     });
   }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
 }
 
 extension ChatModelQuerySortThenBy
@@ -1247,6 +1615,18 @@ extension ChatModelQuerySortThenBy
     });
   }
 
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> thenByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> thenByCreatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<ChatModel, ChatModel, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1256,6 +1636,18 @@ extension ChatModelQuerySortThenBy
   QueryBuilder<ChatModel, ChatModel, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> thenByLastMessage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastMessage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> thenByLastMessageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastMessage', Sort.desc);
     });
   }
 
@@ -1306,6 +1698,18 @@ extension ChatModelQuerySortThenBy
       return query.addSortBy(r'unreadCount', Sort.desc);
     });
   }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QAfterSortBy> thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
 }
 
 extension ChatModelQueryWhereDistinct
@@ -1314,6 +1718,19 @@ extension ChatModelQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'chatId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QDistinct> distinctByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'createdAt');
+    });
+  }
+
+  QueryBuilder<ChatModel, ChatModel, QDistinct> distinctByLastMessage(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastMessage', caseSensitive: caseSensitive);
     });
   }
 
@@ -1347,6 +1764,12 @@ extension ChatModelQueryWhereDistinct
       return query.addDistinctBy(r'unreadCount');
     });
   }
+
+  QueryBuilder<ChatModel, ChatModel, QDistinct> distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAt');
+    });
+  }
 }
 
 extension ChatModelQueryProperty
@@ -1363,7 +1786,19 @@ extension ChatModelQueryProperty
     });
   }
 
-  QueryBuilder<ChatModel, DateTime, QQueryOperations> lastMessageAtProperty() {
+  QueryBuilder<ChatModel, DateTime, QQueryOperations> createdAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'createdAt');
+    });
+  }
+
+  QueryBuilder<ChatModel, String?, QQueryOperations> lastMessageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastMessage');
+    });
+  }
+
+  QueryBuilder<ChatModel, DateTime?, QQueryOperations> lastMessageAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lastMessageAt');
     });
@@ -1391,6 +1826,12 @@ extension ChatModelQueryProperty
   QueryBuilder<ChatModel, int, QQueryOperations> unreadCountProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'unreadCount');
+    });
+  }
+
+  QueryBuilder<ChatModel, DateTime, QQueryOperations> updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAt');
     });
   }
 }

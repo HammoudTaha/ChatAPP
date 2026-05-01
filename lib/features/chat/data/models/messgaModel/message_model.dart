@@ -1,6 +1,6 @@
 import 'package:chatapp/core/utils/enums.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:isar/isar.dart';
-
 import '../../../domain/entities/message.dart';
 part 'message_model.g.dart';
 
@@ -30,10 +30,12 @@ class MessageModel {
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
       messageId: json['id'].toString(),
-      senderId: json['sender_id'].toString(),
-      content: json['message'],
-      createdAt: DateTime.parse(json['created_at']),
-      chatId: json['chat_id'],
+      senderId: json['senderId'].toString(),
+      content: json['content'],
+      createdAt:
+          (json['createdAt'] as firestore.Timestamp?)?.toDate() ??
+          DateTime.now(),
+      chatId: json['chatId'],
       status: json['status'] == 'sent'
           ? MessageStatus.sent
           : json['status'] == 'delivered'
@@ -41,6 +43,14 @@ class MessageModel {
           : MessageStatus.seen,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': messageId,
+    'senderId': senderId,
+    'content': content,
+    'chatId': chatId,
+    'createdAt': createdAt,
+  };
 
   Message toEntity() {
     return Message(

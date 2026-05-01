@@ -2,18 +2,27 @@ part of 'home_bloc.dart';
 
 class HomeState extends Equatable {
   final BlocStatus checkStatus;
-
-  const HomeState({this.checkStatus = BlocStatus.initial});
+  final String? message;
+  const HomeState({this.checkStatus = BlocStatus.initial, this.message});
 
   @override
-  List<Object?> get props => [checkStatus];
+  List<Object?> get props => [checkStatus, message];
 }
 
 class CheckPhoneFoundOnChatState extends HomeState {
-  final String? message;
   const CheckPhoneFoundOnChatState({
     super.checkStatus = BlocStatus.loading,
-    this.message,
+    super.message,
+  });
+
+  @override
+  List<Object?> get props => [checkStatus, message];
+}
+
+class SaveContactState extends HomeState {
+  const SaveContactState({
+    super.checkStatus = BlocStatus.loading,
+    super.message,
   });
 
   @override

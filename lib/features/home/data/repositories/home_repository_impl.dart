@@ -1,14 +1,14 @@
+import 'package:chatapp/core/utils/use_case.dart';
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/connection_info.dart';
-import '../../../../core/utils/use_case.dart';
-import '../../domain/entities/home_contact.dart';
+import '../../domain/entities/chat_entity.dart';
 import '../../domain/repositories/home_repository.dart';
 import '../datasources/home_local_data_source.dart';
 import '../datasources/home_remote_data_source.dart';
-import '../models/home_contact_model.dart';
+import '../models/chat_model.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
   final ConnectionInfo _connectionInfo;
@@ -43,14 +43,39 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<Either<Failure, NoParams>> saveContact(HomeContact contact) async {
+  Future<Either<Failure, NoParams>> saveChat(ChatEntity chat) async {
     try {
-      await _homeLocalDataSource.saveContact(
-        HomeContactModel.fromEntity(contact),
-      );
-      return const Right(NoParams());
-    } on ServerException catch (e) {
-      return Left(Failure(e.message));
+      if (await _connectionInfo.isConnected) {
+        await _homeRemoteDataSource.saveChat(ChatModel.fromEntity(chat));
+        await _homeLocalDataSource.addOrUpdateChat(ChatModel.fromEntity(chat));
+        return Right(const NoParams());
+      }
+      return Left(const Failure('No internet connection .Please try again'));
+    } on ServerException catch (_) {
+      return Left(const Failure('Something went wrong .Please try again'));
     }
   }
+
+  @override
+  Stream<List<ChatEntity>> watchChats() async* {
+    yield* _homeLocalDataSource.watchChats().map(
+      (chatModels) => chatModels.map((model) => model.toEntity()).toList(),
+    );
+  }
+
+  void clearChats() {
+    _homeLocalDataSource.clearChats();
+  }
+
+  // @override
+  // Future<Either<Failure, NoParams>> saveContact(HomeContact contact) async {
+  //   try {
+  //     await _homeLocalDataSource.saveContact(
+  //       HomeContactModel.fromEntity(contact),
+  //     );
+  //     return const Right(NoParams());
+  //   } on ServerException catch (e) {
+  //     return Left(Failure(e.message));
+  //   }
+  // }
 }
